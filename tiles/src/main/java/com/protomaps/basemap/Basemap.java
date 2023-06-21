@@ -27,57 +27,57 @@ public class Basemap extends ForwardingProfile {
       registerHandler(water);
       registerSourceHandler("osm", water);
     } else {
-      var admin = new Boundaries();
-      registerHandler(admin);
-      registerSourceHandler("osm", admin);
+      // var admin = new Boundaries();
+      // registerHandler(admin);
+      // registerSourceHandler("osm", admin);
 
-      var buildings = new Buildings();
-      registerHandler(buildings);
-      registerSourceHandler("osm", buildings);
+      // var buildings = new Buildings();
+      // registerHandler(buildings);
+      // registerSourceHandler("osm", buildings);
 
-      var landuse = new Landuse();
-      registerHandler(landuse);
-      registerSourceHandler("osm", landuse);
+      // var landuse = new Landuse();
+      // registerHandler(landuse);
+      // registerSourceHandler("osm", landuse);
 
-      var natural = new Natural();
-      registerHandler(natural);
-      registerSourceHandler("osm", natural);
+      // var natural = new Natural();
+      // registerHandler(natural);
+      // registerSourceHandler("osm", natural);
 
-      var physical_line = new PhysicalLine();
-      registerHandler(physical_line);
-      registerSourceHandler("osm", physical_line);
+      // var physical_line = new PhysicalLine();
+      // registerHandler(physical_line);
+      // registerSourceHandler("osm", physical_line);
 
-      var physical_point = new PhysicalPoint();
-      registerHandler(physical_point);
-      registerSourceHandler("osm", physical_point);
+      // var physical_point = new PhysicalPoint();
+      // registerHandler(physical_point);
+      // registerSourceHandler("osm", physical_point);
 
-      var place = new Places();
-      registerHandler(place);
-      registerSourceHandler("osm", place);
-      registerSourceHandler("ne", place::processNe);
+      // var place = new Places();
+      // registerHandler(place);
+      // registerSourceHandler("osm", place);
+      // registerSourceHandler("ne", place::processNe);
 
       var poi = new Pois();
       registerHandler(poi);
       registerSourceHandler("osm", poi);
 
-      var roads = new Roads();
-      registerHandler(roads);
-      registerSourceHandler("osm", roads);
+      // var roads = new Roads();
+      // registerHandler(roads);
+      // registerSourceHandler("osm", roads);
 
-      var transit = new Transit();
-      registerHandler(transit);
-      registerSourceHandler("osm", transit);
+      // var transit = new Transit();
+      // registerHandler(transit);
+      // registerSourceHandler("osm", transit);
 
-      var water = new Water();
-      registerHandler(water);
-      registerSourceHandler("osm", water);
-      registerSourceHandler("osm_water", water::processOsm);
-      registerSourceHandler("ne", water::processNe);
+      // var water = new Water();
+      // registerHandler(water);
+      // registerSourceHandler("osm", water);
+      // registerSourceHandler("osm_water", water::processOsm);
+      // registerSourceHandler("ne", water::processNe);
 
-      var earth = new Earth();
-      registerHandler(earth);
-      registerSourceHandler("osm_land", earth::processOsm);
-      registerSourceHandler("ne", earth::processNe);
+      // var earth = new Earth();
+      // registerHandler(earth);
+      // registerSourceHandler("osm_land", earth::processOsm);
+      // registerSourceHandler("ne", earth::processNe);
     }
   }
 
