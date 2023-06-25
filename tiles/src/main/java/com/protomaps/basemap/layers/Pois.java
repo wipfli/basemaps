@@ -66,7 +66,7 @@ public class Pois implements ForwardingProfile.FeatureProcessor, ForwardingProfi
         min_zoom = 13;
       } else if (sf.hasTag("amenity", "cafe")) {
         kind = sf.getString("amenity");
-        min_zoom = 15;
+        min_zoom = 12;
       } else if (sf.hasTag("landuse", "cemetery")) {
         kind = sf.getString("landuse");
         min_zoom = 14;
@@ -80,10 +80,10 @@ public class Pois implements ForwardingProfile.FeatureProcessor, ForwardingProfi
         min_zoom = 13;
       } else if (sf.hasTag("shop", "grocery", "supermarket")) {
         kind = sf.getString("shop");
-        min_zoom = 14;
+        min_zoom = 12;
       } else if (sf.hasTag("tourism", "attraction", "camp_site", "hotel")) {
         kind = sf.getString("tourism");
-        min_zoom = 15;
+        min_zoom = 12;
       } else {
         // Avoid problem of too many "other" kinds
         // All these will default to min_zoom of 15
