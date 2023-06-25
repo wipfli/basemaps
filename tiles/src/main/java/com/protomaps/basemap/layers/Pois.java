@@ -17,12 +17,14 @@ public class Pois implements ForwardingProfile.FeatureProcessor, ForwardingProfi
 
   @Override
   public void processFeature(SourceFeature sf, FeatureCollector features) {
-    if (!sf.canBeLine() && (sf.isPoint() || sf.canBePolygon()) && (sf.hasTag("amenity") ||
-      sf.hasTag("shop") ||
-      sf.hasTag("tourism") ||
-      sf.hasTag("leisure") ||
-      sf.hasTag("aeroway", "aerodrome") ||
-      sf.hasTag("railway", "station"))) {
+    if (!sf.canBeLine() && (sf.isPoint() || sf.canBePolygon()) && (
+      // sf.hasTag("amenity") ||
+      sf.hasTag("shop"))
+      // sf.hasTag("tourism") ||
+      // sf.hasTag("leisure") ||
+      // sf.hasTag("aeroway", "aerodrome") ||
+      // sf.hasTag("railway", "station"))
+      ) {
       String kind = "other";
       if (sf.hasTag("aeroway", "aerodrome")) {
         kind = sf.getString("aeroway");
