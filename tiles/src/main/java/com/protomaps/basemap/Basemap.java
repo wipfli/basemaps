@@ -1,7 +1,9 @@
 package com.protomaps.basemap;
 
+import com.onthegomap.planetiler.FeatureMerge;
 import com.onthegomap.planetiler.ForwardingProfile;
 import com.onthegomap.planetiler.Planetiler;
+import com.onthegomap.planetiler.VectorTile;
 import com.onthegomap.planetiler.config.Arguments;
 import com.onthegomap.planetiler.util.Downloader;
 import com.protomaps.basemap.feature.NaturalEarthDb;
@@ -15,9 +17,11 @@ import com.protomaps.basemap.layers.PhysicalLine;
 import com.protomaps.basemap.layers.PhysicalPoint;
 import com.protomaps.basemap.layers.Places;
 import com.protomaps.basemap.layers.Pois;
+import com.protomaps.basemap.layers.PostTile;
 import com.protomaps.basemap.layers.Roads;
 import com.protomaps.basemap.layers.Transit;
 import com.protomaps.basemap.layers.Water;
+
 import java.nio.file.Path;
 
 
@@ -78,6 +82,9 @@ public class Basemap extends ForwardingProfile {
     registerHandler(earth);
     registerSourceHandler("osm_land", earth::processPreparedOsm);
     registerSourceHandler("ne", earth::processNe);
+
+    var postTile = new PostTile();
+    registerHandler(postTile);
   }
 
   @Override
