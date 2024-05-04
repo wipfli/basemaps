@@ -15,6 +15,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import java.awt.Font;
+import java.awt.FontFormatException;
+import java.awt.font.FontRenderContext;
+import java.awt.font.GlyphVector;
+import java.awt.font.GlyphMetrics;
+
 import com.onthegomap.planetiler.ForwardingProfile;
 import com.onthegomap.planetiler.VectorTile.Feature;
 import com.onthegomap.planetiler.geo.GeometryException;
@@ -66,36 +79,92 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
 
   }
 
-  private static String encodeString(String input) {
-    String result = "DEFAULT";
+  private static String serializeGlyph(int index, int x_offset, int y_offset, int x_advance, int y_advance) {
+    return Integer.toString(index) + "|" +
+      Integer.toString(x_offset) + "|" +
+      Integer.toString(y_offset) + "|" +
+      Integer.toString(x_advance) + "|" +
+      Integer.toString(y_advance);
+  }
+  private static int codepointFromGlyph(String glyph) {
+    HashMap<String, Integer> codepointMap = new HashMap<String, Integer>();
 
+    System.out.println("Start reading encoding.csv...");
     try {
-      String encodedString = URLEncoder.encode(input, StandardCharsets.UTF_8.toString());
-      String urlString = String.format("http://localhost:3002/%s", encodedString);
+      BufferedReader reader;
+      reader = new BufferedReader(new FileReader("src/main/java/com/protomaps/basemap/encoding.csv"));
+      reader.readLine(); // skip header
+      String line = reader.readLine();
+      while (line != null) {
+        String[] parts = line.split(",");
 
-      URL url = new URL(urlString);
+        String index = parts[0].trim();
+        String x_offset = parts[1].trim();
+        String y_offset = parts[2].trim();
+        String x_advance = parts[3].trim();
+        String y_advance = parts[4].trim();
+        String codepoint = parts[5].trim();
 
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setRequestMethod("GET");
+        String key = index + "|" + x_offset + "|" + y_offset + "|" + x_advance  + "|" + y_advance;
 
-      BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-      StringBuilder response = new StringBuilder();
-      String line;
-      while ((line = reader.readLine()) != null) {
-        response.append(line);
+        codepointMap.put(key, Integer.parseInt(codepoint));
+        line = reader.readLine();
       }
       reader.close();
-
-      String markedStringEncoded = response.toString();
-      result = URLDecoder.decode(markedStringEncoded, StandardCharsets.UTF_8.toString());
-      // System.out.println(result);
-
-    } catch (MalformedURLException e) {
-      System.out.println("MalformedURLException: " + e.getMessage());
-    } catch (ProtocolException e) {
-      System.out.println("ProtocolException: " + e.getMessage());
     } catch (IOException e) {
-      System.out.println("IOException: " + e.getMessage());
+      e.printStackTrace();
+      System.exit(1);
+    }
+
+    return codepointMap.get(glyph); // TODO: handle case if glyph not in codepointMap
+  }
+
+  private static String encodeString(String text) {
+    String result = "";
+
+    InputStream is;
+    Font font = null;
+    try {
+      is = new FileInputStream(new File("src/main/java/com/protomaps/basemap/NotoSansDevanagari-Regular.ttf"));
+      font = Font.createFont(Font.TRUETYPE_FONT, is);
+      System.out.println(font.getSize());
+    } catch (IOException | FontFormatException e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+
+
+    FontRenderContext frc = new FontRenderContext(null, true, true);
+    char[] charArray = text.toCharArray();
+    GlyphVector glyphVector = font.layoutGlyphVector(frc, charArray, 0, charArray.length, 0);
+
+    float sumXAdvances = 0;
+
+    for (int i = 0; i < glyphVector.getNumGlyphs(); i++) {
+      GlyphMetrics glyphMetrics = glyphVector.getGlyphMetrics(i);
+      int glyphCode = glyphVector.getGlyphCode(i);
+
+      double xAdvance = glyphMetrics.getAdvanceX();
+      double xPosition = glyphVector.getGlyphPosition(i).getX();
+      double xOffset = xPosition - sumXAdvances;
+
+      int xAdvanceML = (int) Math.floor(1000.0 * xAdvance / 64.0);
+      int xOffsetML = (int) Math.floor(1000.0 * xOffset / 64.0);
+
+      int yAdvanceML = 0;
+      int yOffsetML = 0;
+
+      int codepoint = codepointFromGlyph(serializeGlyph(glyphCode, xOffsetML, yOffsetML, xAdvanceML, yAdvanceML));
+
+      sumXAdvances += xAdvance;
+
+      // System.out.println("Glyph " + i +
+      //   ", Code = " + glyphCode +
+      //   ", xAdvanceML = " + xAdvanceML +
+      //   ", xOffsetML = " + xOffsetML +
+      //   ", codepoint = " + codepoint);
+
+      result += new StringBuilder().appendCodePoint(codepoint).toString();
     }
     return result;
   }
