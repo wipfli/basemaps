@@ -86,7 +86,8 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
       Integer.toString(x_advance) + "|" +
       Integer.toString(y_advance);
   }
-  private static int codepointFromGlyph(String glyph) {
+
+  private static HashMap<String, Integer> getCodepointMap() {
     HashMap<String, Integer> codepointMap = new HashMap<String, Integer>();
 
     System.out.println("Start reading encoding.csv...");
@@ -115,8 +116,32 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
       e.printStackTrace();
       System.exit(1);
     }
+    return codepointMap;
+  }
 
-    return codepointMap.get(glyph); // TODO: handle case if glyph not in codepointMap
+  private static int codepointFromGlyph(int index, int x_offset, int y_offset, int x_advance, int y_advance) {
+
+    HashMap<String, Integer> codepointMap = getCodepointMap();
+    Integer[][] deltas = {
+      {0, 0},
+      {1, 0},
+      {0, 1},
+      {-1, 0},
+      {0, -1}
+    };
+
+    String glyph = "";
+    for (int i = 0; i < deltas.length; ++i) {
+      int delta_x_offset = deltas[i][0];
+      int delta_x_advance = deltas[i][1];
+      System.out.println("Trying delta_x_offset = " + delta_x_offset + ", delta_x_advance = " + delta_x_advance);
+      glyph = serializeGlyph(index, x_offset + delta_x_offset, y_offset, x_advance + delta_x_advance, y_advance);
+      if (codepointMap.get(glyph) != null) {
+        return codepointMap.get(glyph);
+      }
+    }
+
+    return 0; // did not find any matching codepoint
   }
 
   private static String encodeString(String text) {
@@ -127,7 +152,6 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
     try {
       is = new FileInputStream(new File("src/main/java/com/protomaps/basemap/NotoSansDevanagari-Regular.ttf"));
       font = Font.createFont(Font.TRUETYPE_FONT, is);
-      System.out.println(font.getSize());
     } catch (IOException | FontFormatException e) {
       e.printStackTrace();
       System.exit(1);
@@ -154,7 +178,7 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
       int yAdvanceML = 0;
       int yOffsetML = 0;
 
-      int codepoint = codepointFromGlyph(serializeGlyph(glyphCode, xOffsetML, yOffsetML, xAdvanceML, yAdvanceML));
+      int codepoint = codepointFromGlyph(glyphCode, xOffsetML, yOffsetML, xAdvanceML, yAdvanceML);
 
       sumXAdvances += xAdvance;
 
@@ -167,6 +191,44 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
       result += new StringBuilder().appendCodePoint(codepoint).toString();
     }
     return result;
+  }
+
+  private static String getScript(String text) {
+    if (text.length() == 0) {
+      return "";
+    }
+
+    String overallScript = "";
+
+    for (int i = 0; i < text.length(); ++i) {
+      String script = "" + Character.UnicodeScript.of(text.charAt(i));
+      if (script.equals("COMMON")) {
+        continue;
+      }
+      if (script.equals("UNKNOWN")) {
+        continue;
+      }
+      if (script.equals("INHERITED")) {
+        continue;
+      }
+      if (overallScript.equals("")) {
+        overallScript = script;
+      }
+      else {
+        if (script.equals(overallScript)) {
+          continue;
+        }
+        else {
+          return "MIXED";
+        }
+      }
+    }
+
+    if (overallScript.equals("")) {
+      return "COMMON_UNKNOWN_INHERITED";
+    }
+
+    return overallScript;
   }
 
   @Override
@@ -194,6 +256,7 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
               }
             }
             newAttrs.put("@" + key, encodedValue);
+            newAttrs.put("@" + key + "_script", getScript(value));
           }
         }
         item.attrs().putAll(newAttrs);
