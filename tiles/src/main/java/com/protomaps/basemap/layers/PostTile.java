@@ -35,6 +35,24 @@ import com.onthegomap.planetiler.geo.TileCoord;
 
 public class PostTile implements ForwardingProfile.TilePostProcessor {
 
+  HashMap<String, Integer> codepointMap;
+  Font font;
+
+  public PostTile() {
+    System.out.println("hello from PostTile constructor.");
+    this.codepointMap = getCodepointMap();
+
+    InputStream is;
+    // Font font = null;
+    try {
+      is = new FileInputStream(new File("src/main/java/com/protomaps/basemap/NotoSansDevanagari-Regular.ttf"));
+      this.font = Font.createFont(Font.TRUETYPE_FONT, is);
+    } catch (IOException | FontFormatException e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+  }
+
   private static Map<String, ArrayList<?>> segmentString(String input) {
     ArrayList<String> segments = new ArrayList<>();
     ArrayList<Boolean> isInside = new ArrayList<>();
@@ -119,48 +137,73 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
     return codepointMap;
   }
 
-  private static int codepointFromGlyph(int index, int x_offset, int y_offset, int x_advance, int y_advance) {
+  private int codepointFromGlyph(int index, int x_offset, int y_offset, int x_advance, int y_advance) {
 
-    HashMap<String, Integer> codepointMap = getCodepointMap();
+    // HashMap<String, Integer> codepointMap = getCodepointMap();
     Integer[][] deltas = {
       {0, 0},
+
       {1, 0},
       {0, 1},
       {-1, 0},
-      {0, -1}
+      {0, -1},
+      
+      {2, 0},
+      {0, 2},
+      {-2, 0},
+      {0, -2},
+
+      {3, 0},
+      {0, 3},
+      {-3, 0},
+      {0, -3}
     };
 
     String glyph = "";
     for (int i = 0; i < deltas.length; ++i) {
       int delta_x_offset = deltas[i][0];
       int delta_x_advance = deltas[i][1];
-      System.out.println("Trying delta_x_offset = " + delta_x_offset + ", delta_x_advance = " + delta_x_advance);
+      // if (i == 1) {
+      //   System.out.println("Exact glyph not found for index = " + index +
+      //   ", x_offset = " + x_offset +
+      //   ", y_offset = " + y_offset +
+      //   ", x_advance = " + x_advance +
+      //   ", y_advance = " + y_advance + ".");
+      // }
+      // if (i > 0) {
+      //   System.out.println("Trying delta_x_offset = " + delta_x_offset + ", delta_x_advance = " + delta_x_advance + "...");
+      // }
       glyph = serializeGlyph(index, x_offset + delta_x_offset, y_offset, x_advance + delta_x_advance, y_advance);
-      if (codepointMap.get(glyph) != null) {
-        return codepointMap.get(glyph);
+      if (this.codepointMap.get(glyph) != null) {
+        return this.codepointMap.get(glyph);
       }
     }
-
+    System.out.println("Could not find a matching glyph for index = " + index +
+      ", x_offset = " + x_offset +
+      ", y_offset = " + y_offset +
+      ", x_advance = " + x_advance +
+      ", y_advance = " + y_advance + ". Aborting...");
+    System.exit(1);
     return 0; // did not find any matching codepoint
   }
 
-  private static String encodeString(String text) {
+  private String encodeString(String text) {
     String result = "";
 
-    InputStream is;
-    Font font = null;
-    try {
-      is = new FileInputStream(new File("src/main/java/com/protomaps/basemap/NotoSansDevanagari-Regular.ttf"));
-      font = Font.createFont(Font.TRUETYPE_FONT, is);
-    } catch (IOException | FontFormatException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
+    // InputStream is;
+    // // Font font = null;
+    // try {
+    //   is = new FileInputStream(new File("src/main/java/com/protomaps/basemap/NotoSansDevanagari-Regular.ttf"));
+    //   font = Font.createFont(Font.TRUETYPE_FONT, is);
+    // } catch (IOException | FontFormatException e) {
+    //   e.printStackTrace();
+    //   System.exit(1);
+    // }
 
 
     FontRenderContext frc = new FontRenderContext(null, true, true);
     char[] charArray = text.toCharArray();
-    GlyphVector glyphVector = font.layoutGlyphVector(frc, charArray, 0, charArray.length, 0);
+    GlyphVector glyphVector = this.font.layoutGlyphVector(frc, charArray, 0, charArray.length, 0);
 
     float sumXAdvances = 0;
 
@@ -225,7 +268,8 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
     }
 
     if (overallScript.equals("")) {
-      return "COMMON_UNKNOWN_INHERITED";
+      // all characters are in COMMON or UNKNOWN or INHERITED
+      return "GENERIC";
     }
 
     return overallScript;
@@ -255,8 +299,8 @@ public class PostTile implements ForwardingProfile.TilePostProcessor {
                 encodedValue += segments.get(i);
               }
             }
-            newAttrs.put("@" + key, encodedValue);
-            newAttrs.put("@" + key + "_script", getScript(value));
+            newAttrs.put("pmap:encoded:" + key, encodedValue);
+            newAttrs.put("pmap:script:" + key, getScript(value));
           }
         }
         item.attrs().putAll(newAttrs);
